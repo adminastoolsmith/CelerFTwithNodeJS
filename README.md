@@ -12,5 +12,5 @@ The CelerFT backend web server is based on Node.js with Express.js.
 
 ##### Dependencies
 
-CelerFT requires JQuery and the SparkMD5 library. The Node.js server requires fs-extra, formidable, crypto, 
+CelerFT requires JQuery and the SparkMD5 library. The Node.js server requires the fs-extra, formidable, crypto, 
 express and path modules.
