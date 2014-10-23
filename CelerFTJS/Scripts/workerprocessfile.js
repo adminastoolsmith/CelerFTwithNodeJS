@@ -1,7 +1,14 @@
-﻿// This worker is used to split the file into chunks,
-// and calculate the file checksum.
-// Each chunk is sent back to the parent page to be
-// uploaded by another worker
+﻿/**
+ * Description - This code provides the functionality to do Gigabit file uploads to a backend server that supports
+ *               this capability. We use the File API to slice a file inot chunks and then send the chunk back to
+ *               another web worker process for uploading to the backend server. We use the CryptoMD5 library to
+ *               calculate the MD5 file checksum for the file
+ *                             
+ * Author - Nigel Thomas
+ * 
+ * Copyright 2014 by Nigel Thomas<nigelbtomas@gmail.com>
+ * 
+ *  */
 
 // Import additional scripts
 // MD5 checksum libraray https://github.com/satazor/SparkMD5

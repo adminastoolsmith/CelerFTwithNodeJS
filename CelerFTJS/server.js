@@ -1,4 +1,19 @@
-﻿var express = require('express');
+﻿/**
+ * Description - This code provides the functionality to do Gigabit file uploads using Node.js and Express.js.
+ *               The client application uploads a Gigabit sized file to the Node.js backend in chunks, and each
+ *               chunk is saved by the Node.js backend as a separate file. The chunks are sent as multipart/form-data
+ *               encoded data. The data can either by a binary file or a base64 enocded version of the binary file.
+ *               Once all of the data hase been received the client sends teh Node.js backend a mergeall command and
+ *               the Node.js backend will merge all of the file chunks into a single file.
+ *               
+ * Author - Nigel Thomas
+ * 
+ * Copyright 2014 by Nigel Thomas<nigelbtomas@gmail.com>
+ * 
+ *  */
+
+// The required modules
+var express = require('express');
 var formidable = require('formidable');
 var fs = require('fs-extra');
 var path = require('path');

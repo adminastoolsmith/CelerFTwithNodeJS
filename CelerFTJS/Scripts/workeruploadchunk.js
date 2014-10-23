@@ -1,5 +1,28 @@
-﻿// This worker is used to upload the file chunks to the backend server.
-// The file chunks is sent to the worker by the parent page
+﻿/**
+ * Description - This code provides the functionality to do Gigabit file uploads to a backend server that supports
+ *               this capability. We use the XMLHttpRequest Level 2 object to upload either a binary file chunk or
+ *               a base64 encoded represenation of teh file chunk to the server. The file chunk is uploaded as
+ *               multipart/form-data and is sent use the HTTP POST verb. The parameters sent in the upload method are:
+ *               
+ *               filename - This is the name of the file to be uploaded
+ *               directoryname - This is the name of directory to save the file in on the remote server
+ *               chunkNumber - The current number of the file chunk that is being uploaded
+ *               numberOfChunks - The total number of file chunks that is to be uploaded
+ *               asynstate - Access the url either synchrnoulsy or asynchrnously
+ *               
+ *               The merge method is used to merge all of the saved file chunks into the file and  uses the HHTP 
+ *               GET verb the parameters are:
+ *               
+ *               filename - This is the name of the file to be uploaded
+ *               directoryname - This is the name of directory to save the file in on the remote server
+ *               numberOfChunks - The total number of file chunks that is to be uploaded
+ *               
+ *               
+ * Author - Nigel Thomas
+ * 
+ * Copyright 2014 by Nigel Thomas<nigelbtomas@gmail.com>
+ * 
+ *  */
 
 // Url for WebAPI functions
 var webapiUrl = "/api/CelerFTFileUpload/UploadChunk";
