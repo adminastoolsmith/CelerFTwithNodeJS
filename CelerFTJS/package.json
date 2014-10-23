@@ -1,0 +1,15 @@
+{
+  "name": "CelerFTJS",
+  "version": "0.0.0",
+  "description": "CelerFTJS",
+  "main": "server.js",
+  "author": {
+    "name": "Administrator",
+    "email": ""
+  },
+  "dependencies": {
+    "express": "^4.9.8",
+    "formidable": "^1.0.15",
+    "fs-extra": "^0.12.0"
+  }
+}
