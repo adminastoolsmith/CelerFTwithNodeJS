@@ -47,6 +47,7 @@ app.listen(process.env.PORT || 1337);
 
 // Path to save the files
 var uploadpath = 'C:/Uploads/CelerFT/';
+//var uploadpath = process.env.uploadpath;
 
 // Use the post method for express.js to respond to posts to the uploadchunk urls and
 // save each file chunk as a separate file

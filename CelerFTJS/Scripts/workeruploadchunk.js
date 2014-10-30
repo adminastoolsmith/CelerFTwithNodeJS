@@ -40,6 +40,7 @@ var totalnumberofchunks = 0;
 var uploadedchunk = 0;
 
 var urlcount = 0;
+var urlnumber = 0;
 
 function sleep(milliseconds) {
     var start = new Date().getTime();
@@ -322,22 +323,26 @@ self.onmessage = function (e) {
     // Parallel uploads is supported by publishng the web site on different ports
     // The backen must implement CORS for this to work
     else if (workerdata.chunk != null && workerdata.paralleluploads == true) {
+        
+        if (urlnumber >= 6) {
+            urlnumber = 0;
+        }
 
         if (urlcount >= 6) {
-            
             urlcount = 0;
         }
         
         if (urlcount == 0) {
-            uploadurl = workerdata.currentlocation + webapiUrl;
+            uploadurl = workerdata.currentlocation + webapiUrl + urlnumber;
         }
         else {
             // Increment the port numbers, e.g 8000, 8001, 8002, 8003, 8004, 8005
-            uploadurl = workerdata.currentlocation.slice(0, -1) + urlcount + webapiUrl + urlcount;
+            uploadurl = workerdata.currentlocation.slice(0, -1) + urlcount + webapiUrl + urlnumber;
         }
         
         upload(workerdata.chunk, workerdata.filename, workerdata.chunkCount, uploadurl, workerdata.asyncstate);
         urlcount++;
+        urlnumber++;
     }
 
     else {
