@@ -127,6 +127,13 @@
                         <p></p>
                     </li>
                     <li class="form">
+                        <label for="select_parallelupload" style="float:left;width:410px">Backend supports parallel upload method: <font color="blue">(Note backend server listens on different ports (e.g 8000, 8001, 8002, 8003, 8004, 8005).)</font></label>
+                        <input type="checkbox" id="select_parallelupload" name="parallelupload" />
+                    </li>
+                    <li class="form">
+                        <p></p>
+                    </li>
+                    <li class="form">
                         <label for="select_bytesperchunk" style="float:left;width:410px">Select the bytes per chunk: </label>
                         <select id="select_bytesperchunk" name="bytesperchunk" style="width:200px">
                             <option value="1">50MB</option>
@@ -334,6 +341,13 @@
                     return;
                 }*/
 
+                // Save current protocol and host for parallel uploads
+                var currentProtocol = window.location.protocol;
+                var currentHostandPort = window.location.host;
+                var currentLocation = currentProtocol + "//" + currentHostandPort;
+                //alert(currentLocation);
+
+
                 // Get the selected file and/or files
                 var files = $("#select_file")[0].files;
 
@@ -420,9 +434,16 @@
                                 progress(data.percentage, data.id);
                                 break;
 
-                            // Send and uplaod message to the webworker
+                            // Send and upload message to the webworker
                             case 'upload':
-                                uploadworkers[data.id].postMessage({ 'chunk': data.blob, 'filename': data.filename, 'directory': $("#select_directory").val(), 'chunkCount': data.chunkCount, 'asyncstate': data.asyncstate, 'id': data.id });
+                                // Check to see if backend supports parallel uploads
+                                var paralleluploads = false;
+                                
+                                if ($('#select_parallelupload').prop('checked')) {
+                                    paralleluploads = true;
+                                }
+
+                                uploadworkers[data.id].postMessage({ 'chunk': data.blob, 'filename': data.filename, 'directory': $("#select_directory").val(), 'chunkCount': data.chunkCount, 'asyncstate': data.asyncstate, 'paralleluploads': paralleluploads, 'currentlocation': currentLocation, 'id': data.id });
                                 break;
 
                             // Send a merge message to the web worker

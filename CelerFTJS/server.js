@@ -20,9 +20,24 @@ var path = require('path');
 var crypto = require('crypto');
 var app = express();
 
-// Path to save the files
-var uploadpath = 'C:/Uploads/CelerFT/';
+// Enables Cross-Origin Resource Sharing
+// Taken from http://bannockburn.io/2013/09/cross-origin-resource-sharing-cors-with-a-node-js-express-js-and-sencha-touch-app/
+var enableCORS = function (request, response, next) {
+    response.header('Access-Control-Allow-Origin', '*');
+    response.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+    
+    // intercept OPTIONS method    
+    if ('OPTIONS' == request.method) {
+        response.send(200);
+    } 
+    else {
+        next();
+    }
+};
 
+// Enable CORS in express
+app.use(enableCORS);
 
 // Serve up the Default.html page
 app.use(express.static(__dirname, { index: 'Default.html' }));
@@ -30,9 +45,12 @@ app.use(express.static(__dirname, { index: 'Default.html' }));
 // Startup the express.js application
 app.listen(process.env.PORT || 1337);
 
-// Use the all method for express.js to respond to posts to the uploadchunk urls and
+// Path to save the files
+var uploadpath = 'C:/Uploads/CelerFT/';
+
+// Use the post method for express.js to respond to posts to the uploadchunk urls and
 // save each file chunk as a separate file
-app.all('*/UploadChunk*', function (request, response) {
+app.post('*/api/CelerFTFileUpload/UploadChunk*', function (request, response) {
     
     if (request.method === 'POST') {
         

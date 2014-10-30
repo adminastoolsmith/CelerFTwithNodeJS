@@ -297,8 +297,10 @@ self.onmessage = function (e) {
     // Create the xhr upload workers.
     // We will upload to multiple urls
     xhrworkerspool = new XHRWorkerPool(6);
-
-    if (workerdata.chunk != null) {
+    
+    // We are doing a normal upload to a backend that provides
+    // multiple methods to accept the upload
+    if (workerdata.chunk != null && workerdata.paralleluploads == false) {
 
         if (urlcount >= 6) {
 
@@ -312,6 +314,28 @@ self.onmessage = function (e) {
             uploadurl = webapiUrl + urlcount;
         }
 
+        upload(workerdata.chunk, workerdata.filename, workerdata.chunkCount, uploadurl, workerdata.asyncstate);
+        urlcount++;
+    }
+
+    // We are going to upload to a backend that supports parallel uploads.
+    // Parallel uploads is supported by publishng the web site on different ports
+    // The backen must implement CORS for this to work
+    else if (workerdata.chunk != null && workerdata.paralleluploads == true) {
+
+        if (urlcount >= 6) {
+            
+            urlcount = 0;
+        }
+        
+        if (urlcount == 0) {
+            uploadurl = workerdata.currentlocation + webapiUrl;
+        }
+        else {
+            // Increment the port numbers, e.g 8000, 8001, 8002, 8003, 8004, 8005
+            uploadurl = workerdata.currentlocation.slice(0, -1) + urlcount + webapiUrl + urlcount;
+        }
+        
         upload(workerdata.chunk, workerdata.filename, workerdata.chunkCount, uploadurl, workerdata.asyncstate);
         urlcount++;
     }
