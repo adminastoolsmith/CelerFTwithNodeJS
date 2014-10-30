@@ -29,7 +29,7 @@ var enableCORS = function (request, response, next) {
     
     // intercept OPTIONS method    
     if ('OPTIONS' == request.method) {
-        response.send(200);
+        response.send(204);
     } 
     else {
         next();
