@@ -186,7 +186,7 @@ app.post('*/api/CelerFTFileUpload/UploadChunk*', function (request, response) {
 
 
 // Request to merge all of the file chunks into one file
-app.get('*/MergeAll*', function (request, response) {
+app.get('*/api/CelerFTFileUpload/MergeAll*', function (request, response) {
 
     if (request.method === 'GET') {
         
