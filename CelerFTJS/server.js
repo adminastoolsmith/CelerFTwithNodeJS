@@ -46,8 +46,13 @@ app.use(express.static(__dirname, { index: 'Default.html' }));
 app.listen(process.env.PORT || 1337);
 
 // Path to save the files
-var uploadpath = 'C:/Uploads/CelerFT/';
-//var uploadpath = process.env.uploadpath;
+// Path to save the files
+if (process.env.uploadpath == undefined) {
+    var uploadpath = 'C:/Uploads/CelerFT/';
+}
+else {
+    var uploadpath = process.env.uploadpath;
+}
 
 // Use the post method for express.js to respond to posts to the uploadchunk urls and
 // save each file chunk as a separate file
@@ -110,12 +115,19 @@ app.post('*/api/CelerFTFileUpload/UploadChunk*', function (request, response) {
                 var base64data = fileSlice.toString().split('\r\n');
                 var fileData = new Buffer(base64data[4].toString(), 'base64');
                 
-                fs.outputFileSync(localfilepath, fileData);
-                console.log('Saved file to ' + localfilepath);
+                // Save the file and create parent directory if it does not exist
+                fs.outputFile(localfilepath, fileData, function (err) {
+                    
+                    if (err) {
+                        response.status(500).send(err);
+                        return;
+                    }
+                    
+                    // Send back a sucessful response with the file name
+                    response.status(200).send(localfilepath);
+                    response.end();
                 
-                // Send back a sucessful response with the file name
-                response.status(200).send(localfilepath);
-                response.end();
+                });
 
             });
         }
@@ -136,13 +148,8 @@ app.post('*/api/CelerFTFileUpload/UploadChunk*', function (request, response) {
                     return;
                 }
 
-            //console.log({ fields: fields, files: files });
             });
             
-            // Use the filebegin event to save the file with the naming convention
-            /*form.on('fileBegin', function (name, file) {
-            file.path = localfilepath;
-        });*/
 
         form.on('error', function (err) {
                 if (err) {
@@ -152,23 +159,24 @@ app.post('*/api/CelerFTFileUpload/UploadChunk*', function (request, response) {
             });
             
             // After the files have been saved to the temporary name
-            // move them to the to teh correct file name
+            // move them to the to the correct file name.
+            // Overwrite if necessary
             form.on('end', function (fields, files) {
                 
                 // Temporary location of our uploaded file        
                 var temp_path = this.openedFiles[0].path;
                 
-                fs.move(temp_path , localfilepath, function (err) {
+                fs.move(temp_path , localfilepath, true, function (err) {
                     
                     if (err) {
                         response.status(500).send(err);
                         return;
                     }
-                    else {
-                        // Send back a sucessful response with the file name
-                        response.status(200).send(localfilepath);
-                        response.end();
-                    }
+                    
+                    // Send back a sucessful response with the file name
+                    response.status(200).send(localfilepath);
+                    response.end();
+                    
                 
                 });
             
@@ -202,12 +210,7 @@ app.get('*/api/CelerFTFileUpload/MergeAll*', function (request, response) {
         // Note we only wnat the files with a *.tmp extension
         var files = getfilesWithExtensionName(localFilePath, 'tmp')
         
-        /*if (err) {
-            response.status(500).send(err);
-            return;
-        }*/
-        
-        if (files.length != request.param('numberOfChunks')) {
+        if ((typeof files == "undefined") || (files.length != request.param('numberOfChunks'))) {
             
             response.status(400).send('Number of file chunks less than total count');
             return;
@@ -217,48 +220,61 @@ app.get('*/api/CelerFTFileUpload/MergeAll*', function (request, response) {
         var outputFile = fs.createWriteStream(filename);
         
         // Done writing the file
-        // Move it to top level directory
-        // and create MD5 hash
+        // Create the MD5 hash and then move to top level directory
+
         outputFile.on('finish', function () {
-            console.log('file has been written');
+
+            console.log('file has been written ' + filename);
             
-            // New name for the file
-            var newfilename = uploadpath + request.param('directoryname') + '/' + baseFilename + extension;
+            // Create MD5 hash
+            var hash = crypto.createHash('md5'), 
+                hashstream = fs.createReadStream(filename);
             
-            // Check if file exists at top level if it does delete it
-            //if (fs.ensureFileSync(newfilename)) {
-            fs.removeSync(newfilename);
-            //}
-            
-            // Move the file
-            fs.move(filename, newfilename , function (err) {
-                if (err) {
-                    response.status(500).send(err);
-                    return;
-                }
-                else {
-                    
-                    // Delete the temporary directory
-                    fs.removeSync(localFilePath);
-                    var hash = crypto.createHash('md5'), 
-                        hashstream = fs.createReadStream(newfilename);
-                    
-                    hashstream.on('data', function (data) {
-                        hash.update(data)
-                    });
-                    
-                    hashstream.on('end', function () {
-                        
-                        var md5results = hash.digest('hex');
-                        
-                        // Send back a sucessful response with the file name
-                        response.status(200).send('Sucessfully merged file ' + filename + ", " + md5results.toUpperCase());
-                        response.end();
-                    });
-                }
+            hashstream.on('data', function (data) {
+                hash.update(data)
             });
             
-               
+            hashstream.on('end', function () {
+                
+                var md5results = hash.digest('hex');
+                
+                // Rename the file and move it to the top level directory
+                
+                // New name for the file
+                var newfilename = uploadpath + request.param('directoryname') + '/' + baseFilename + extension;
+                
+                // Check if file exists at top level if it does delete it
+                // Use move with overwrite option
+                fs.move(filename, newfilename , true, function (err) {
+                    if (err) {
+                        response.status(500).send(err);
+                        return;
+                    }
+                    else {
+                        
+                        // Delete the temporary directory
+                        fs.remove(localFilePath, function (err) {
+                            
+                            if (err) {
+                                response.status(500).send(err);
+                                return;
+                            }
+                            
+                            // Send back a sucessful response with the file name
+                            response.status(200).send('Sucessfully merged file ' + filename + ", " + md5results.toUpperCase());
+                            response.end();
+                        
+                        });
+
+                        // Send back a sucessful response with the file name
+                        //response.status(200).send('Sucessfully merged file ' + filename + ", " + md5results.toUpperCase());
+                        //response.end();
+                    
+                    }
+                });
+   
+            });
+            
         });
         
         // Loop through the file chunks and write them to the file
@@ -297,6 +313,11 @@ String.prototype.padLeft = function (paddingChar, length) {
 function getfilesWithExtensionName(dir, ext) {
     
     var matchingfiles = [];
+    
+    if (fs.ensureDirSync(dir)) {
+        return matchingfiles;
+    }
+
     var files = fs.readdirSync(dir);
     for (var i = 0; i < files.length; i++) {
         if (path.extname(files[i]) === '.' + ext) {
