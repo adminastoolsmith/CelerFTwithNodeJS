@@ -46,7 +46,6 @@ app.use(express.static(__dirname, { index: 'Default.html' }));
 app.listen(process.env.PORT || 1337);
 
 // Path to save the files
-// Path to save the files
 if (process.env.uploadpath == undefined) {
     var uploadpath = 'C:/Uploads/CelerFT/';
 }
