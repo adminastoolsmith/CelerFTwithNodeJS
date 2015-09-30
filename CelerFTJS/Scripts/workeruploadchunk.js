@@ -10,12 +10,6 @@
  *               numberOfChunks - The total number of file chunks that is to be uploaded
  *               asynstate - Access the url either synchrnoulsy or asynchrnously
  *               
- *               The merge method is used to merge all of the saved file chunks into the file and  uses the HHTP 
- *               GET verb the parameters are:
- *               
- *               filename - This is the name of the file to be uploaded
- *               directoryname - This is the name of directory to save the file in on the remote server
- *               numberOfChunks - The total number of file chunks that is to be uploaded
  *               
  *               
  * Author - Nigel Thomas
@@ -153,10 +147,10 @@ function mergeall(filename, chunkCount) {
         }
 
         // A 400 message indicates that we can't merge all of the files as yet.
-        // So queue up the merge request to run in 5 seconds
+        // So queue up the merge request to run in 30 seconds
         if (this.readyState == 4 && this.status == 400) {
             
-            setTimeout(function () { mergeall(filename, chunkCount); }, 5000);
+            setTimeout(function () { mergeall(filename, chunkCount); }, 30000);
         }
 
     };
@@ -181,20 +175,38 @@ function upload(chunk, filename, chunkCount, uploadurl, asyncstate) {
     try {
         if (asyncstate == true) {
             xhr.upload.onprogress = function (e) {
+                
+                if (e.lengthComputable) {
+                    var progress = parseInt((e.loaded * 100 / e.total), 10);
+                    self.postMessage({ 'type': 'progress', 'percentage': progress, 'id': workerdata.id });
+                }
+                else {
+                    var progress = parseInt((chunkCount.currentNumber * 100 / chunkCount.numberOfChunks), 10);
+                    self.postMessage({ 'type': 'progress', 'percentage': progress, 'id': workerdata.id });
+                }
     
-                //var progress = parseInt((e.loaded * 100 / e.total), 10);
+                /* //var progress = parseInt((e.loaded * 100 / e.total), 10);
                 var progress = parseInt((chunkCount.currentNumber * 100 / chunkCount.numberOfChunks), 10);
-                self.postMessage({ 'type': 'progress', 'percentage': progress, 'id': workerdata.id });
+                self.postMessage({ 'type': 'progress', 'percentage': progress, 'id': workerdata.id });*/
             }(chunkCount);
         }
     }
     catch (e) {
 
         xhr.onprogress = function (e) {
-
-            //var progress = parseInt((e.loaded * 100 / e.total), 10);
+            
+            if (e.lengthComputable) {
+                var progress = parseInt((e.loaded * 100 / e.total), 10);
+                self.postMessage({ 'type': 'progress', 'percentage': progress, 'id': workerdata.id });
+            }
+            else {
+                var progress = parseInt((chunkCount.currentNumber * 100 / chunkCount.numberOfChunks), 10);
+                self.postMessage({ 'type': 'progress', 'percentage': progress, 'id': workerdata.id });
+            }
+            
+            /* //var progress = parseInt((e.loaded * 100 / e.total), 10);
             var progress = parseInt((chunkCount.currentNumber * 100 / chunkCount.numberOfChunks), 10);
-            self.postMessage({ 'type': 'progress', 'percentage': progress, 'id': workerdata.id });
+            self.postMessage({ 'type': 'progress', 'percentage': progress, 'id': workerdata.id });*/
         }(chunkCount);
 
     }
@@ -244,10 +256,10 @@ function upload(chunk, filename, chunkCount, uploadurl, asyncstate) {
     xhr.onloadend = function () {
 
         // If we have uploaded all of the file chunks then tell the server to merge them
-        if (chunkCount.numberOfUploadedChunks == chunkCount.numberOfChunks) {
+        /*if (chunkCount.numberOfUploadedChunks == chunkCount.numberOfChunks) {
             mergeall(filename, chunkCount);
 
-        }
+        }*/
     };
 
     // Open the url and upload the file chunk
@@ -345,9 +357,9 @@ self.onmessage = function (e) {
         urlnumber++;
     }
 
-    else {
+    /*else {
         mergeall(workerdata.filename, workerdata.chunkCount);
-    }
+    }*/
 
 
 

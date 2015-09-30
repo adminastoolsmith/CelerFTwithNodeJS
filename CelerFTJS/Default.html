@@ -292,6 +292,7 @@
 
             var workers = [];
             var uploadworkers = [];
+            var mergeworkers = [];
 
             function progress(percent, id) {
 
@@ -315,6 +316,11 @@
                 for (var j = 0; j < uploadworkers.length; j++) {
 
                     uploadworkers[j].terminate();
+                }
+
+                for (var j = 0; j < mergeworkers.length; j++) {
+
+                    mergeworkers[j].terminate();
                 }
 
                 $("#errormessage").append('<p> File uploads terminated by user request. </p>');
@@ -404,6 +410,33 @@
                     uploadworkers.push(uploadworker);
                 }
 
+                // Create the merge workers
+                for (var i = 0; i < files.length; i++) {
+
+                    var mergeworker = new Worker("Scripts/workermergeall.js");
+
+                    mergeworker.onmessage = function (e) {
+
+                        var data = e.data;
+                        switch (data.type) {
+
+                            // Update the checksum value in the table
+                            case 'checksum':
+                                $("#remote" + data.id).text(data.message);
+                                break;
+
+                                // Update legend of the progressbar
+                            case 'status':
+                                $("#file_name" + data.id).children('legend:first').text(data.message);
+                                break;
+                        }
+
+                    }
+
+                    mergeworker.onerror = function (e) { $("#errormessage").append(e.message); }
+                    mergeworkers.push(mergeworker);
+                }
+
                 // Create the file processing web worker
                 for (var j = 0; j < files.length; j++) {
 
@@ -448,7 +481,8 @@
 
                             // Send a merge message to the web worker
                             case 'merge':
-                                uploadworkers[data.id].postMessage({ 'filename': data.filename, 'directory': $("#select_directory").val(), 'chunkCount': data.chunkCount, 'id': data.id });
+                                //uploadworkers[data.id].postMessage({ 'filename': data.filename, 'directory': $("#select_directory").val(), 'chunkCount': data.chunkCount, 'id': data.id });
+                                mergeworkers[data.id].postMessage({ 'filename': data.filename, 'directory': $("#select_directory").val(), 'chunkCount': data.chunkCount, 'id': data.id });
                                 break;
 
                              // Show error messages and stop the worker
