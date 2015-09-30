@@ -70,7 +70,7 @@ function mergeall(filename, chunkCount) {
         // So queue up the merge request to run in 30 seconds
         if (this.readyState == 4 && this.status == 400) {
             
-            setTimeout(function () { mergeall(filename, chunkCount); }, 30000);
+            setTimeout(function () { mergeall(filename, chunkCount); }, 5000);
         }
 
     };

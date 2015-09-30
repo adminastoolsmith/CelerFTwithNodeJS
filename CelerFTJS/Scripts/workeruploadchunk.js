@@ -147,10 +147,10 @@ function mergeall(filename, chunkCount) {
         }
 
         // A 400 message indicates that we can't merge all of the files as yet.
-        // So queue up the merge request to run in 30 seconds
+        // So queue up the merge request to run in 5 seconds
         if (this.readyState == 4 && this.status == 400) {
             
-            setTimeout(function () { mergeall(filename, chunkCount); }, 30000);
+            setTimeout(function () { mergeall(filename, chunkCount); }, 5000);
         }
 
     };
