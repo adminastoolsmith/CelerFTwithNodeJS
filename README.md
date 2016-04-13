@@ -4,7 +4,9 @@
 #### Description
 
 CelerFT is a file upload tool that allows you to upload up to 5 files at a time. CelerFT allows you to upload 
-large files i.e serveral gigabytes in size to a backend web server. 
+large files i.e serveral gigabytes in size to a backend web server. The file uploading backend uses asynchronous code in order
+to improve the performance of the backend. This helps to reduce memory, and cpu usage. It also uses toobusy-js to temporary
+stop serving requests.
 
 The CelerFT user interface is based on Javascript, the HTML5 File API, Web Workers, and XMLHTTPRequest Level 2.
 
@@ -17,4 +19,4 @@ that has the path of the file to be processed.
 ##### Dependencies
 
 CelerFT requires JQuery and the SparkMD5 library. The Node.js server requires the fs-extra, formidable, crypto, 
-express and path modules.
+express, toobusy-js and path modules.
