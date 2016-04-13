@@ -16,6 +16,8 @@ The CelerFT backend can also be used with NGINX. In this configuration NGINX act
 to the NGINX web server. Once the file has been uploaded to the temporary directory by NGINX a x-file-name header is passed on to CelerFT
 that has the path of the file to be processed.
 
+The NGINX server can be configured for HTTP2 support.
+
 ##### Dependencies
 
 CelerFT requires JQuery and the SparkMD5 library. The Node.js server requires the fs-extra, formidable, crypto, 
