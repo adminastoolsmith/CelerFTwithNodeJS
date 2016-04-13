@@ -124,11 +124,15 @@
                         <input type="checkbox" id="select_asyncstate" name="asyncstate" />
                     </li>
                     <li class="form">
+                        <label for="select_parallelupload" style="float:left;width:410px">Backend supports parallel upload method: <font color="blue">(Note backend server listens on different ports (e.g 8000, 8001, 8002, 8003, 8004, 8005).)</font></label>
+                        <input type="checkbox" id="select_parallelupload" name="parallelupload" />
+                    </li>
+                    <li class="form">
                         <p></p>
                     </li>
                     <li class="form">
-                        <label for="select_parallelupload" style="float:left;width:410px">Backend supports parallel upload method: <font color="blue">(Note backend server listens on different ports (e.g 8000, 8001, 8002, 8003, 8004, 8005).)</font></label>
-                        <input type="checkbox" id="select_parallelupload" name="parallelupload" />
+                        <label for="select_xfilename" style="float:left;width:410px">Backend supports X-File-Name: <font color="blue">(Note backend server saves the file and sends the path to the file in a X-File-Name header)</font></label>
+                        <input type="checkbox" id="select_xfilename" name="xfilename" />
                     </li>
                     <li class="form">
                         <p></p>
@@ -293,6 +297,7 @@
             var workers = [];
             var uploadworkers = [];
             var mergeworkers = [];
+            var getchecksumworkers = [];
 
             function progress(percent, id) {
 
@@ -321,6 +326,11 @@
                 for (var j = 0; j < mergeworkers.length; j++) {
 
                     mergeworkers[j].terminate();
+                }
+
+                for (var j = 0; j < getchecksumworkers.length; j++) {
+
+                    getchecksumworkers[j].terminate();
                 }
 
                 $("#errormessage").append('<p> File uploads terminated by user request. </p>');
@@ -388,6 +398,10 @@
                                 progress(data.percentage, data.id);
                                 break;
 
+                            //case 'merge':
+                                //mergeworkers[data.id].postMessage({ 'filename': data.filename, 'directory': $("#select_directory").val(), 'chunkCount': data.chunkCount, 'id': data.id });
+                                //break;
+
                             // Show error messages and stop the worker
                             case 'error':
                                 $("#errormessage").append('<p>' + data.message + '</p>');
@@ -410,6 +424,33 @@
                     uploadworkers.push(uploadworker);
                 }
 
+                // Create the get checksum workers
+                for (var i = 0; i < files.length; i++) {
+
+                    var getchecksumworker = new Worker("Scripts/workergetchecksum.js");
+
+                    getchecksumworker.onmessage = function (e) {
+
+                        var data = e.data;
+                        switch (data.type) {
+
+                            // Update the checksum value in the table
+                            case 'localchecksum':
+                                $("#local" + data.id).text(data.message);
+                                break;
+
+                            case 'remotechecksum':
+                                $("#remote" + data.id).text(data.message);
+                                break;
+
+                        }
+
+                    }
+
+                    getchecksumworker.onerror = function (e) { $("#errormessage").append(e.message); }
+                    getchecksumworkers.push(getchecksumworker);
+                }
+
                 // Create the merge workers
                 for (var i = 0; i < files.length; i++) {
 
@@ -422,7 +463,8 @@
 
                             // Update the checksum value in the table
                             case 'checksum':
-                                $("#remote" + data.id).text(data.message);
+                                //$("#remote" + data.id).text(data.message);
+                                getchecksumworkers[data.id].postMessage({ 'filename': data.filename, 'directory': $("#select_directory").val(), 'bytesperchunk': $("#select_bytesperchunk option:selected").text(), 'id': data.id });
                                 break;
 
                                 // Update legend of the progressbar
@@ -476,7 +518,14 @@
                                     paralleluploads = true;
                                 }
 
-                                uploadworkers[data.id].postMessage({ 'chunk': data.blob, 'filename': data.filename, 'directory': $("#select_directory").val(), 'chunkCount': data.chunkCount, 'asyncstate': data.asyncstate, 'paralleluploads': paralleluploads, 'currentlocation': currentLocation, 'id': data.id });
+                                // Check to see if backend supports X-file-Name
+                                var xfilenameuploads = false;
+
+                                if ($('#select_xfilename').prop('checked')) {
+                                    xfilenameuploads = true;
+                                }
+
+                                uploadworkers[data.id].postMessage({ 'chunk': data.blob, 'filename': data.filename, 'directory': $("#select_directory").val(), 'chunkCount': data.chunkCount, 'asyncstate': data.asyncstate, 'paralleluploads': paralleluploads, 'xfilenameuploads': xfilenameuploads, 'currentlocation': currentLocation, 'id': data.id });
                                 break;
 
                             // Send a merge message to the web worker

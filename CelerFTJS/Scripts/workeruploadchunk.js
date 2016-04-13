@@ -85,7 +85,7 @@ XHRWorkerPool.prototype.terminateWorkers = function () {
     }
 }
 
-// Function used to creae the multipart/form-data in browsers
+// Function used to create the multipart/form-data in browsers
 // that don't support Formdata
 function buildFormData(chunk) {
 
@@ -123,45 +123,6 @@ function buildFormData(chunk) {
 
 }
 
-// Function used to send the request to the server to merge the file chunks 
-// into one file
-function mergeall(filename, chunkCount) {
-
-    var xhr = new XMLHttpRequest();
- 
-    xhr.onreadystatechange = function (e) {
-
-        if (this.readyState == 4 && this.status == 200) {
-
-            // Update the UI with the information that we have finished the file upload, and indicate the time taken
-            // Update the UI with the remote file checksum
-            if (chunkCount.numberOfUploadedChunks == chunkCount.numberOfChunks) {
-                var endtime = new Date();
-                var timetaken = new Date();
-                var timetaken = (((endtime.getTime() - chunkCount.starttime.getTime()) / 1000) / 60);
-                var md5hash = this.responseText.split(",");
-                self.postMessage({ 'type': 'status', 'message': filename + " uploaded succesfully. It took " + timetaken.toFixed(2) + " minutes to upload.", 'id': workerdata.id });
-                self.postMessage({ 'type': 'checksum', 'message':  md5hash[1], 'id': workerdata.id });
-
-            }
-        }
-
-        // A 400 message indicates that we can't merge all of the files as yet.
-        // So queue up the merge request to run in 5 seconds
-        if (this.readyState == 4 && this.status == 400) {
-            
-            setTimeout(function () { mergeall(filename, chunkCount); }, 5000);
-        }
-
-    };
-
-    // Send the request to merge the file
-    xhr.open('GET', webapiGetMergeAllUrl + '/?filename=' + filename + '&directoryname=' + workerdata.directory + '&numberOfChunks=' + chunkCount.numberOfChunks, false);
-    xhr.send(null);
-    xhr = null;
-
-
-}
 
 // Function used to upload the file chunks
 function upload(chunk, filename, chunkCount, uploadurl, asyncstate) {
@@ -251,24 +212,42 @@ function upload(chunk, filename, chunkCount, uploadurl, asyncstate) {
 
         }
 
+
     };
 
-    xhr.onloadend = function () {
-
+    //xhr.onloadend = function () {
+        
         // If we have uploaded all of the file chunks then tell the server to merge them
-        /*if (chunkCount.numberOfUploadedChunks == chunkCount.numberOfChunks) {
-            mergeall(filename, chunkCount);
+        /**if (chunkCount.numberOfUploadedChunks == chunkCount.numberOfChunks) {
+            //mergeall(filename, chunkCount);
+         // Merge the file on the remote server
+         self.postMessage({ 'type': 'merge', 'filename': filename, 'chunkCount': chunkCount, 'id': workerdata.id });
 
-        }*/
-    };
+        }**/
+
+        //self.postMessage({ 'type': 'merge', 'filename': filename, 'chunkCount': chunkCount, 'id': workerdata.id });
+
+        
+    //};
 
     // Open the url and upload the file chunk
-    xhr.open('POST', uploadurl + '?filename=' + filename + '&directoryname=' + workerdata.directory + '&chunkNumber=' + chunkCount.currentNumber + '&numberOfChunks=' + chunkCount.numberOfChunks, asyncstate);
-
+    //xhr.open('POST', uploadurl + '?filename=' + filename + '&directoryname=' + workerdata.directory + '&chunkNumber=' + chunkCount.currentNumber + '&numberOfChunks=' + chunkCount.numberOfChunks, asyncstate);
+    
     var formData = '';
 
-    if (typeof FormData == "undefined") {
+    // If the back end supprts X-file-Name just send the chunk as bibary file
+    if (workerdata.xfilenameuploads == true) {
 
+        //xhr.send(chunk);
+        //xhrworkerspool.releaseWorker(xhr);
+        //return;
+        uploadurl = uploadurl + '/XFileName';
+        formData = chunk;
+    }
+
+    else if (typeof FormData == "undefined") {
+        
+        uploadurl = uploadurl + '/Base64';
         // The browser does not support the FormData object.
         // We will manually create the from 
 
@@ -281,21 +260,25 @@ function upload(chunk, filename, chunkCount, uploadurl, asyncstate) {
 
     }
     else {
-
+        
+        uploadurl = uploadurl + '/FormData';
         // Browser supports the Formdata object
         // Create the form 
         formData = new FormData();
         formData.append("Slice", chunk);
 
     }
-
-   
+    
+    // Open the url and upload the file chunk
+    xhr.open('POST', uploadurl + '?filename=' + filename + '&directoryname=' + workerdata.directory + '&chunkNumber=' + chunkCount.currentNumber + '&numberOfChunks=' + chunkCount.numberOfChunks, asyncstate);
+    
     // Send the form
     xhr.send(formData);
 
     formData = null;
 
     xhrworkerspool.releaseWorker(xhr);
+
 
 }
 
@@ -313,7 +296,7 @@ self.onmessage = function (e) {
     
     // We are doing a normal upload to a backend that provides
     // multiple methods to accept the upload
-    if (workerdata.chunk != null && workerdata.paralleluploads == false) {
+    /**if (workerdata.chunk != null && workerdata.paralleluploads == false) {
 
         if (urlcount >= 6) {
 
@@ -332,7 +315,7 @@ self.onmessage = function (e) {
     }
 
     // We are going to upload to a backend that supports parallel uploads.
-    // Parallel uploads is supported by publishng the web site on different ports
+    // Parallel uploads is supported by publishing the web site on different ports
     // The backen must implement CORS for this to work
     else if (workerdata.chunk != null && workerdata.paralleluploads == true) {
         
@@ -355,12 +338,13 @@ self.onmessage = function (e) {
         upload(workerdata.chunk, workerdata.filename, workerdata.chunkCount, uploadurl, workerdata.asyncstate);
         urlcount++;
         urlnumber++;
-    }
+    } **/
 
     /*else {
         mergeall(workerdata.filename, workerdata.chunkCount);
     }*/
 
+    upload(workerdata.chunk, workerdata.filename, workerdata.chunkCount, webapiUrl, workerdata.asyncstate);
 
 
 }

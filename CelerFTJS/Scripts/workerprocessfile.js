@@ -34,8 +34,57 @@ function sleep(milliseconds) {
 }
 
 // Function used to generate file checksum
-// Using synchronous file reader in teh webworker
+// Using asynchronous file reader in the webworker
 function processFileChecksum(blob) {
+    
+    var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
+
+    // Size of the file
+    var SIZE = blob.size;
+    
+    // The total number of file chunks
+    var chunks = Math.ceil(blob.size / BYTES_PER_CHUNK);
+    var currentChunk = 0;
+    
+    // The asynchronous file reader used in the web worker
+    var fileReader = new FileReader();
+    
+    // SparkMD5 MD5 checksum generator variable
+    var spark = new SparkMD5.ArrayBuffer();
+
+    fileReader.onload = function (e) {
+        
+        spark.append(e.target.result);                   // Append array buffer 
+        currentChunk++;
+        
+        if (currentChunk < chunks) {
+            loadNext();
+        } else {
+
+            // All done calculate the checksum. 
+            var md5hash = spark.end();
+            self.postMessage({ 'type': 'checksum', 'message': md5hash.toUpperCase(), 'id': workerdata.id });
+        }
+    };
+    
+    /**fileReader.onerror = function () {
+        console.warn('oops, something went wrong.');
+    };**/
+    
+    function loadNext() {
+        var start = currentChunk * BYTES_PER_CHUNK,
+            end = ((start + BYTES_PER_CHUNK) >= blob.size) ? blob.size : start + BYTES_PER_CHUNK;
+        
+        fileReader.readAsArrayBuffer(blobSlice.call(blob, start, end));
+    }
+    
+    loadNext();
+    
+}
+
+// Function used to generate file checksum
+// Using synchronous file reader in teh webworker
+function processFileChecksum1(blob) {
 
 
     // Size of the file
@@ -104,7 +153,7 @@ function processFile(blob) {
     var end = BYTES_PER_CHUNK;
 
     var fileReader = new FileReaderSync();
-    var spark = new SparkMD5.ArrayBuffer();
+    //var spark = new SparkMD5.ArrayBuffer();
 
     while (start < SIZE) {
 
@@ -112,8 +161,8 @@ function processFile(blob) {
         var chunk = blob.slice(start, end);
 
         // Read the chunk into another variable to calculate the checksum
-        var chunk1 = fileReader.readAsArrayBuffer(chunk);
-        spark.append(chunk1);
+        //var chunk1 = fileReader.readAsArrayBuffer(chunk);
+        //spark.append(chunk1);
 
         // Send the chunk back to the parent
         self.postMessage({ 'type': 'upload', 'filename': blob.name, 'blob': chunk, 'chunkCount': chunkCount, 'asyncstate': asyncstate,'id': workerdata.id });
@@ -127,11 +176,14 @@ function processFile(blob) {
         if (chunkCount.numberOfUploadedChunks == chunkCount.numberOfChunks) {
 
             // All done calculate the checksum
-            var md5hash = spark.end();
-            self.postMessage({ 'type': 'checksum', 'message': md5hash.toUpperCase(), 'id': workerdata.id });
+            //var md5hash = spark.end();
+            //self.postMessage({ 'type': 'checksum', 'message': md5hash.toUpperCase(), 'id': workerdata.id });
 
             // Merge the file on the remote server
             self.postMessage({ 'type': 'merge', 'filename': blob.name, 'chunkCount': chunkCount, 'id': workerdata.id });
+
+            // Calculate the local file checksum
+            processFileChecksum(workerdata.files);
         }
     }
 
@@ -202,11 +254,17 @@ self.onmessage = function (e) {
 
     // Process the file for uploading      
     //  Send a status message to the parent page
-    self.postMessage({ 'type': 'status', 'message': "Uploading file " + workerdata.files.name, 'id': workerdata.id });
+    //self.postMessage({ 'type': 'status', 'message': "Uploading file " + workerdata.files.name, 'id': workerdata.id });
 
     // Start processing the file
+    //processFile(workerdata.files);
+
+    // Calculate the checksum
+    //self.postMessage({ 'type': 'status', 'message': "Calculating checksum " + workerdata.files.name, 'id': workerdata.id });
+    //processFileChecksum(workerdata.files);
+    
+    // Upload file
+    self.postMessage({ 'type': 'status', 'message': "Uploading file " + workerdata.files.name, 'id': workerdata.id });
     processFile(workerdata.files);
-
-
 
 }

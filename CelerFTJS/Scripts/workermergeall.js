@@ -19,6 +19,7 @@
 // Url for WebAPI functions
 var webapiUrl = "/api/CelerFTFileUpload/UploadChunk";
 var webapiGetMergeAllUrl = "/api/CelerFTFileUpload/MergeAll";
+var webapiGetChecksumlUrl = "/api/CelerFTFileUpload/GetChecksum";
 
 // Global variables
 // Note IE 10 does not recognize the const declaration so we have to use var instead
@@ -61,7 +62,10 @@ function mergeall(filename, chunkCount) {
                 var timetaken = (((endtime.getTime() - chunkCount.starttime.getTime()) / 1000) / 60);
                 var md5hash = this.responseText.split(",");
                 self.postMessage({ 'type': 'status', 'message': filename + " uploaded succesfully. It took " + timetaken.toFixed(2) + " minutes to upload.", 'id': workerdata.id });
-                self.postMessage({ 'type': 'checksum', 'message': md5hash[1], 'id': workerdata.id });
+                //self.postMessage({ 'type': 'checksum', 'message': md5hash[1], 'id': workerdata.id });
+
+                // Calculate the checksum on the remote server
+                self.postMessage({ 'type': 'checksum', 'filename': filename, 'directory': workerdata.directory, 'id': workerdata.id });
 
             }
         }
@@ -73,6 +77,15 @@ function mergeall(filename, chunkCount) {
             setTimeout(function () { mergeall(filename, chunkCount); }, 5000);
         }
 
+        /**if (this.readyState == 4 && this.status == 502) {
+            
+            setTimeout(function () { mergeall(filename, chunkCount); }, 5000);
+        }**/
+
+       if (this.readyState == 4 && this.status == 503) {
+        
+            setTimeout(function () { mergeall(filename, chunkCount); }, 5000);
+        }
     };
     
     // Send the request to merge the file
