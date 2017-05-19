@@ -1,6 +1,11 @@
 # CelerFTwithNODEJS
 ===============
 
+##### Note
+
+An updated version of CelerFT can be found at this link https://github.com/adminastoolsmith/CelerFT. This version supports 
+resuming a file upload and is written as a module.
+
 #### Description
 
 CelerFT is a file upload tool that allows you to upload up to 5 files at a time. CelerFT allows you to upload 
@@ -14,8 +19,3 @@ The CelerFT backend web server is based on Node.js with Express.js.
 
 CelerFT requires JQuery and the SparkMD5 library. The Node.js server requires the fs-extra, formidable, crypto, 
 express and path modules.
-
-##### Note
-
-An updated version of CelerFT can be found at this link https://github.com/adminastoolsmith/CelerFT. This version supports 
-resuming a file upload and is written as a module.
